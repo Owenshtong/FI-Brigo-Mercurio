@@ -106,22 +106,23 @@ def sse(BM_para):
         pack_nss = x_op
     )
     market_premium = cap_quoted_vol.BlackPrice
-    loss = sum((cap_quoted_vol.Maturity * (cap_BM - market_premium)/(market_premium))**2)
+    loss = sum(((cap_BM - market_premium)/(market_premium))**2)
     # loss = sum((cap_BM - market_premium) ** 2)
     print([BM_para, loss])
     return loss
 
 # "kappa", "theta", "sigma", "rt", "gamma",
-bunds = [(0.05,1),(0.001,0.2),(0.01,0.4),(0.01, 0.1),(0.01,0.5)]
+bunds = [(0.01,1),(0.001,0.2),(0.01,0.4),(0.01, 0.1),(0.01,0.5)]
 opt_result = minimize(sse,
-                      x0= [0.01323959, 0.09478633, 0.0479164 , 0.04820152, 0.06845098] ,
-                      method='L-BFGS-B',
+                      x0= [0.05      , 0.13299393, 0.04761863, 0.04746266, 0.09265682],
+                      method='Nelder-Mead',
                       bounds=bunds,
                       options={'maxiter': 10000}
                       )
 pack_BM = opt_result["x"]
 
-pack_BM = [0.01323959, 0.09478633, 0.0479164 , 0.04820152, 0.06845098]
+pack_BM = [0.04640003, 0.1386506 , 0.04768863, 0.04745836, 0.09139257]
+# [0.04640003, 0.1386506 , 0.04768863, 0.04745836, 0.09139257]  best on sse%
 # [0.01323959, 0.09478633, 0.0479164 , 0.04820152, 0.06845098]  converges well on sse%
 p_bm = BM_cap_vect(
     kappa=pack_BM[0],
@@ -151,17 +152,22 @@ cap_quoted_vol["BM_IV"] = root_vect(
 
 # Plot
 M = [0.95, 1, 1.05]
-fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(10, 12))
+fig, ax = plt.subplots(nrows=3, ncols=2, figsize=(10, 15), dpi = 200)
 for i in range(3):
     atm = cap_quoted_vol[cap_quoted_vol['Strike_times'] == M[i]]
     axj1 = ax[i,0]
     axj2 = ax[i,1]
-    axj1.plot(atm.Maturity, atm.BlackPrice, label = "Observed")
-    axj1.plot(atm.Maturity, atm.BMPrice, label="Modeled")
-    axj1.set_title("Brigo-Mercurio Price v.s. Black Price")
+    axj1.plot(atm.Maturity, atm.BlackPrice, color = "red", marker  = "D", markersize=4, linestyle = "-.", label = "Observed")
+    axj1.plot(atm.Maturity, atm.BMPrice, color = "black",marker  = "D",markersize=4,label="Modeled")
+    axj1.set_title(r"Brigo-Mercurio Price v.s. Black Price, $K="+ str(M[i]) + "K_f$")
 
-    axj2.plot(atm.Maturity, atm.IV_market, label="Observed")
-    axj2.plot(atm.Maturity, atm.BM_IV, label="Modeled")
-    axj2.set_title("Brigo-Mercurio IV v.s. Quoted IV")
+    axj2.plot(atm.Maturity, atm.IV_market,"red", marker  = "D", linestyle = "-.", markersize=4,label="Observed")
+    axj2.plot(atm.Maturity, atm.BM_IV, color = "black", marker  = "D", markersize=4,label="Modeled")
+    axj2.set_title("Brigo-Mercurio IV v.s. Quoted IV, $K="+ str(M[i]) + "K_f$")
+
+
 plt.legend(facecolor='none', edgecolor='none')
+plt.tight_layout()
+plt.gcf()
+plt.savefig("cap_fit.pdf")
 plt.show()
