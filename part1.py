@@ -1,4 +1,5 @@
 # Functions for Part1 #
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import norm
 from scipy.stats import ncx2
@@ -52,8 +53,14 @@ def nss(t,a,b,c,d, tau, theta):
     f2 = (1 - np.exp(-t / tau))/(t/tau)
     f3 = f2 - np.exp(-t/tau)
     f4 = (1 - np.exp(-t / theta))/(t/theta)- np.exp(-t/theta)
+    print(f1,f2,f3,f4)
     return a*f1 + b*f2 + c*f3 + d*f4
-
+def yield_plt(lb, ub, prarm):
+    x = np.linspace(lb, ub, 500)
+    nss_vect = np.vectorize(nss, excluded=["a",'b','c',"d", "tau", "theta"])
+    y = nss_vect(x, *prarm)
+    plt.plot(x,y, s=5)
+    plt.show()
 
 # (3)
 # P(0,t) ZCB from the nss curve

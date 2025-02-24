@@ -171,3 +171,12 @@ plt.tight_layout()
 plt.gcf()
 plt.savefig("cap_fit.pdf")
 plt.show()
+
+
+
+
+
+
+
+
+
