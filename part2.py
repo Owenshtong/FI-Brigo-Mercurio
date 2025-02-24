@@ -19,6 +19,7 @@ def Lt(kappa, theta, sigma, h1_to_7,
 
     H = np.diag(h1_to_7)
     gamma =  np.sqrt(kappa**2 + 2 * sigma**2)
+
     B = np.reshape(b_vect(t1 = 0, t2 = tau, kappa = kappa,
                gamma = gamma) * (1 / tau),
                    (T,1))
@@ -27,7 +28,7 @@ def Lt(kappa, theta, sigma, h1_to_7,
                gamma = gamma, sigma = sigma,theta = theta) * (-1 / tau),
                    (T, 1))
 
-    C = theta * (1 - np.exp(kappa * 7/365))
+    C = theta * (1 - np.exp(-kappa * 7/365))
     D = np.exp(-kappa * 7/365)
 
     phi = rt1 * (sigma**2 / kappa) * (D - D**2) + theta *  (sigma**2 / kappa) * .5 * (1 - D)**2
