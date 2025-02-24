@@ -24,8 +24,9 @@ def Lt(kappa, theta, sigma, h1_to_7,
                gamma = gamma) * (1 / tau),
                    (T,1))
 
-    A = np.reshape(a_vect(t1 = 0, t2 = tau, kappa = kappa,
-               gamma = gamma, sigma = sigma,theta = theta) * (-1 / tau),
+    A = np.reshape(
+        np.log(a_vect(t1 = 0, t2 = tau, kappa = kappa,
+               gamma = gamma, sigma = sigma,theta = theta)) * (-1 / tau),
                    (T, 1))
 
     C = theta * (1 - np.exp(-kappa * 7/365))
@@ -39,15 +40,16 @@ def Lt(kappa, theta, sigma, h1_to_7,
 
     # vt
     vt = H + Phat_t * B @ B.T
+    # vt = np.diag(np.diag(vt)) # Try?
 
     # Gamma t
     Lambda_t = yt - A - rhat_t * B
 
     # Kalman gain (a row vector)
-    kgt = Phat_t * B.T @ vt
+    kgt = Phat_t * B.T @ np.linalg.inv(vt)
 
     # Output 1:  log llh
-    Lt = -.5 * (np.log(np.linalg.det(vt)) + Lambda_t.T @ vt @ Lambda_t)
+    Lt = -.5 * (np.log(np.linalg.det(vt)) + Lambda_t.T @ np.linalg.inv(vt) @ Lambda_t)
     Lt = Lt[0,0]
 
     # Output 2: updated rt
