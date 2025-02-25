@@ -1,7 +1,8 @@
 # Functions for part2
 import numpy as np
 import part1
-
+import pandas as pd
+import copy as copy
 # (1)
 a_vect = np.vectorize(part1.a_cir, excluded=["t1","kappa", "theta", "sigma","gamma", "theta"])
 b_vect = np.vectorize(part1.b_cir, excluded=["t1","kappa", "gamma"])
@@ -29,8 +30,9 @@ def Lt(kappa, theta, sigma, h1_to_7,
                gamma = gamma, sigma = sigma,theta = theta)) * (-1 / tau),
                    (T, 1))
 
-    C = theta * (1 - np.exp(-kappa * 7/365))
-    D = np.exp(-kappa * 7/365)
+    delta = len(h1_to_7)
+    C = theta * (1 - np.exp(-kappa * delta/365))
+    D = np.exp(-kappa * delta/365)
 
     phi = rt1 * (sigma**2 / kappa) * (D - D**2) + theta *  (sigma**2 / kappa) * .5 * (1 - D)**2
 
@@ -44,6 +46,7 @@ def Lt(kappa, theta, sigma, h1_to_7,
 
     # Gamma t
     Lambda_t = yt - A - rhat_t * B
+    # print(Lambda_t)
 
     # Kalman gain (a row vector)
     kgt = Phat_t * B.T @ np.linalg.inv(vt)
@@ -58,22 +61,51 @@ def Lt(kappa, theta, sigma, h1_to_7,
     # Output 3: updated Pt
     Pt = Phat_t - kgt @ B * Phat_t
 
+    # Output 4: Meausrement error
 
-    return Lt, Pt, rt
+    return Lt, Pt, rt, Lambda_t
 
-def L_sum(kappa, theta, sigma, lamb, h1_to_7, df_yield, tau):
+def L_sum(kappa, theta, sigma, lamb, h1_to_7, df_yield ,tau):
+    T = len(df_yield)
+    n = len(h1_to_7)
+
     # Initialize by un-conditional expectation
     rt1 = kappa * theta / (kappa - sigma * lamb)
     Pt1 = sigma**2 * kappa * theta / (2 * (kappa - sigma * lamb)**2)
 
     L_acc = 0
     rt_vault = []
+    Lambda_vault = []
     for i in df_yield.index:
         yt = df_yield.loc[i]
-        Llh_t, Pt, rt = Lt(kappa, theta, sigma, h1_to_7, rt1, Pt1, yt, tau)
+        Llh_t, Pt, rt, Lambda_t = Lt(kappa, theta, sigma, h1_to_7, rt1, Pt1, yt, tau)
         rt1, Pt1 = rt, Pt
         L_acc += Llh_t
         rt_vault.append(rt1[0,0])
 
-    return L_acc, rt_vault
+        Lambda_t = Lambda_t.reshape((1, n))
+        Lambda_vault.extend(list(Lambda_t[0]))
+    Lambda_vault = pd.DataFrame(np.array(Lambda_vault).reshape((T,n)),
+                                index=df_yield.index, columns=tau)
 
+
+
+    return L_acc, rt_vault, Lambda_vault
+
+def fisher(pack, y, tau, epsilon = 10e-10):
+    # pack in order kappa theta sigma h1to7
+    # y is the yield
+    dig = []
+    for i in range(4):
+        pack_min = copy.copy(pack)
+        pack_plu = copy.copy(pack)
+
+        pack_min[i] += epsilon
+        pack_plu[i] += epsilon
+
+        _2nd_prox = (L_sum(*pack_plu[:4], pack_plu[4:], y, tau)[0]\
+                    - 2 *  L_sum(*pack[:4], pack[4:], y, tau)[0] \
+                    +  L_sum(*pack_min[:4], pack_min[4:], y, tau)[0]) / (epsilon **2)
+        dig.append(_2nd_prox)
+
+    return np.diag(dig)

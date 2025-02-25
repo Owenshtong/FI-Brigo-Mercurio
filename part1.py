@@ -53,7 +53,6 @@ def nss(t,a,b,c,d, tau, theta):
     f2 = (1 - np.exp(-t / tau))/(t/tau)
     f3 = f2 - np.exp(-t/tau)
     f4 = (1 - np.exp(-t / theta))/(t/theta)- np.exp(-t/theta)
-    print(f1,f2,f3,f4)
     return a*f1 + b*f2 + c*f3 + d*f4
 def yield_plt(lb, ub, prarm):
     x = np.linspace(lb, ub, 500)
