@@ -79,16 +79,18 @@ plt.savefig("plot/rt.pdf")
 plt.show()
 
 # Plot different yield return over time
+fig, ax = plt.subplots(nrows=7, ncols=1, figsize=(10, 20), dpi = 100)
 for i in range(7):
-    fig, ax = plt.subplots(figsize=(10, 5), dpi = 200)
-    ax.plot(y_observed.index,y_hat.iloc[:,i], marker = "D", markersize = 2, label = "Estimated")
-    ax.plot(y_observed.index, y_observed.iloc[:,i], marker = "D", markersize = 2, label = "Observed")
-    plt.title(r"$\tau = " + str(tau[i]) + "$")
+    axi = ax[i]
+    axi.plot(y_observed.index, y_hat.iloc[:, i], color = "black",marker  = "o",markersize=2,  label="Estimated")
+    axi.plot(y_observed.index, y_observed.iloc[:, i], color = "red", marker  = "o", markersize=2, linestyle = "-.", label="Observed")
+    axi.set_title(r"$\tau = " + str(tau[i]) + "$", y=0.8, bbox=dict(facecolor='white', alpha=0.01))
     plt.ylabel("Yield")
-    plt.legend()
-    plt.gcf()
-    plt.savefig("plot/y_"+str(tau[i])+".pdf")
-    plt.show()
+plt.legend()
+plt.gcf()
+plt.savefig("plot/yield_t.pdf")
+plt.show()
+
 
 #  Report satistics
 THETA_opt = opt_x[:4] # kappa theta sigma lambda
@@ -99,6 +101,9 @@ ME_mean = ME.describe().loc["mean"] # mean of measurement error
 ME_var = opt_x[4:] # h1 2 3 4 5 6 7 the var of measurement
 
 fisher = part2.fisher(opt_x,y_observed, tau)
-sig = np.sqrt(-1 * np.linalg.inv(fisher)) # variance of parameters
+sig = np.sqrt(np.linalg.inv(fisher)) # variance of parameters
+
+
+
 
 

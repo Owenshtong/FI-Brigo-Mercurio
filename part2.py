@@ -99,7 +99,7 @@ def L_sum(kappa, theta, sigma, lamb, h1_to_7, df_yield ,tau):
 
     return L_acc, rt_vault, Lambda_vault
 
-def fisher(pack, y, tau, epsilon = 10e-10):
+def fisher(pack, y, tau, epsilon = 10e-7):
     # pack in order kappa theta sigma h1to7
     # y is the yield
     dig = []
@@ -107,7 +107,7 @@ def fisher(pack, y, tau, epsilon = 10e-10):
         pack_min = copy.copy(pack)
         pack_plu = copy.copy(pack)
 
-        pack_min[i] += epsilon
+        pack_min[i] -= epsilon
         pack_plu[i] += epsilon
 
         _2nd_prox = (L_sum(*pack_plu[:4], pack_plu[4:], y, tau)[0]\
@@ -115,4 +115,4 @@ def fisher(pack, y, tau, epsilon = 10e-10):
                     +  L_sum(*pack_min[:4], pack_min[4:], y, tau)[0]) / (epsilon **2)
         dig.append(_2nd_prox)
 
-    return np.diag(dig)
+    return -1 * np.diag(dig)
