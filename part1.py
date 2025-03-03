@@ -212,3 +212,10 @@ def shift(t, fm_0t, kappa, theta, gamma, x0):
 
 
 
+def CIR_yield(t1,t2,rt, kappa, theta, sigma):
+    gamma = np.sqrt(kappa**2 + 2 * sigma**2)
+    a = a_cir(t1, t2, kappa, theta, sigma,gamma)
+    b = b_cir(t1, t2, kappa, gamma)
+    return - 1/(t2-t1) * (np.log(a) - b * rt)
+
+

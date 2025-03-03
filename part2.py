@@ -4,9 +4,9 @@ import part1
 import pandas as pd
 import copy as copy
 # (1)
-a_vect = np.vectorize(part1.a_cir, excluded=["t1","kappa", "theta", "sigma","gamma", "theta"])
+a_vect = np.vectorize(part1.a_cir, excluded=["t1","kappa", "theta", "sigma","gamma"])
 b_vect = np.vectorize(part1.b_cir, excluded=["t1","kappa", "gamma"])
-def Lt(kappa, theta, sigma, h1_to_7,
+def Lt(kappa, theta, sigma, lamb, h1_to_7,
        rt1, Pt1, yt, tau):
     # first 5 are parameters h1_to_7 is a list of 7
     # r_t1 is previous estimated short rate
@@ -18,23 +18,28 @@ def Lt(kappa, theta, sigma, h1_to_7,
     tau = np.array(tau)
     yt = np.array(yt).reshape((T,1))
 
-    H = np.diag(h1_to_7)
-    gamma =  np.sqrt(kappa**2 + 2 * sigma**2)
+    # Swith to P measue
+    kappa_p = kappa - sigma * lamb
+    theta_p = kappa * theta / (kappa - sigma * lamb)
 
-    B = np.reshape(b_vect(t1 = 0, t2 = tau, kappa = kappa,
-               gamma = gamma) * (1 / tau),
+
+    H = np.diag(h1_to_7)
+    gamma =  np.sqrt(kappa_p ** 2 + 2 * sigma ** 2)
+
+    B = np.reshape(b_vect(t1 = 0, t2 = tau, kappa = kappa_p,
+                          gamma = gamma) * (1 / tau),
                    (T,1))
 
     A = np.reshape(
-        np.log(a_vect(t1 = 0, t2 = tau, kappa = kappa,
-               gamma = gamma, sigma = sigma,theta = theta)) * (-1 / tau),
+        np.log(a_vect(t1 = 0, t2 = tau, kappa = kappa_p,
+                      gamma = gamma, sigma = sigma, theta = theta_p)) * (-1 / tau),
                    (T, 1))
 
-    delta = len(h1_to_7)
-    C = theta * (1 - np.exp(-kappa * delta/365))
-    D = np.exp(-kappa * delta/365)
 
-    phi = rt1 * (sigma**2 / kappa) * (D - D**2) + theta *  (sigma**2 / kappa) * .5 * (1 - D)**2
+    C = theta_p * (1 - np.exp(-kappa_p * (7 / 365)))
+    D = np.exp(-kappa_p * (7 / 365))
+
+    phi = rt1 * (sigma ** 2 / kappa_p) * (D - D ** 2) + theta_p * (sigma ** 2 / kappa_p) * .5 * (1 - D)**2
 
     # Hat r and P
     rhat_t = C + D * rt1
@@ -50,6 +55,9 @@ def Lt(kappa, theta, sigma, h1_to_7,
 
     # Kalman gain (a row vector)
     kgt = Phat_t * B.T @ np.linalg.inv(vt)
+
+
+    # print(np.linalg.det(vt))
 
     # Output 1:  log llh
     Lt = -.5 * (np.log(np.linalg.det(vt)) + Lambda_t.T @ np.linalg.inv(vt) @ Lambda_t)
@@ -71,14 +79,14 @@ def L_sum(kappa, theta, sigma, lamb, h1_to_7, df_yield ,tau):
 
     # Initialize by un-conditional expectation
     rt1 = kappa * theta / (kappa - sigma * lamb)
-    Pt1 = sigma**2 * kappa * theta / (2 * (kappa - sigma * lamb)**2)
+    Pt1 = (sigma**2) * kappa * theta / (2 * (kappa - sigma * lamb)**2)
 
     L_acc = 0
     rt_vault = []
     Lambda_vault = []
     for i in df_yield.index:
         yt = df_yield.loc[i]
-        Llh_t, Pt, rt, Lambda_t = Lt(kappa, theta, sigma, h1_to_7, rt1, Pt1, yt, tau)
+        Llh_t, Pt, rt, Lambda_t = Lt(kappa, theta, sigma, lamb, h1_to_7, rt1, Pt1, yt, tau)
         rt1, Pt1 = rt, Pt
         L_acc += Llh_t
         rt_vault.append(rt1[0,0])
@@ -87,7 +95,6 @@ def L_sum(kappa, theta, sigma, lamb, h1_to_7, df_yield ,tau):
         Lambda_vault.extend(list(Lambda_t[0]))
     Lambda_vault = pd.DataFrame(np.array(Lambda_vault).reshape((T,n)),
                                 index=df_yield.index, columns=tau)
-
 
 
     return L_acc, rt_vault, Lambda_vault
